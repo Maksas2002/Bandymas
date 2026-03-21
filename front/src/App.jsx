@@ -11,76 +11,62 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const initApp = async () => {
-      const token = getToken();
-      
-      // 1. Jei tokeno nėra, iškart baigiame krovimą ir rodome Landing
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        // 2. Bandome gauti vartotoją, bet pasiruošiame klaidai
-        const res = await fetch(`${API_URL}/auth/me`, {
-          headers: { "Authorization": `Bearer ${token}` }
-        });
-
-        // 3. Jei serveris randa vartotoją (200 OK)
-        if (res.ok) {
-          const userData = await res.json();
-          setUser(userData);
-          setView("dashboard");
-        } else {
-          // 4. Jei gauname 404 ar kitą klaidą - tiesiog išvalome sesiją
-          console.warn("Sesija negalioja arba maršrutas nerastas (404)");
-          removeToken();
-          setView("landing");
-        }
-      } catch (err) {
-        // 5. Jei serveris išvis neatsako (tinklo klaida)
-        console.error("Tinklo klaida:", err);
+  // Funkcija sesijos patikrinimui
+  const checkSession = async () => {
+    const token = getToken();
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+    try {
+      const res = await fetch(`${API_URL}/auth/me`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const userData = await res.json();
+        console.log("Sesija aktyvi:", userData);
+        setUser(userData);
+        setView("dashboard");
+      } else {
+        removeToken();
         setView("landing");
-      } finally {
-        setLoading(false);
       }
-    };
+    } catch (err) {
+      console.error("Auth patikros klaida:", err);
+      setView("landing");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    initApp();
+  useEffect(() => {
+    checkSession();
   }, []);
 
-  // LOADING būsena, kad nebūtų tuščias ekranas
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#03061C] flex items-center justify-center">
-        <div className="text-white opacity-20 animate-pulse font-bold tracking-widest">
-          NEST IS LOADING...
-        </div>
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="min-h-screen bg-[#03061C] flex items-center justify-center text-blue-500 font-bold">
+      KRAUNAMA...
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-[#03061C] text-white">
-      {/* Rodome LandingPage tik jei esame toje būsenoje */}
       {view === "landing" && (
-        <LandingPage 
-          onGetStarted={() => setView("auth")} 
-          onLogin={() => setView("auth")} 
-        />
+        <LandingPage onGetStarted={() => setView("auth")} onLogin={() => setView("auth")} />
       )}
 
-      {/* Rodome AuthPage */}
       {view === "auth" && (
         <AuthPage 
-          onAuthSuccess={(u) => { setUser(u); setView("dashboard"); }} 
+          onAuthSuccess={(u) => { 
+            console.log("Prisijungta sėkmingai:", u);
+            setUser(u); 
+            setView("dashboard"); 
+          }} 
           onBack={() => setView("landing")} 
-          initialMode="login"
         />
       )}
 
-      {/* Rodome Dashboard tik jei TURIME vartotoją (apsauga nuo 'id' klaidos) */}
+      {/* Labai svarbi apsauga: user && view === "dashboard" */}
       {view === "dashboard" && user && (
         user.role === "admin" 
           ? <AdminPanel user={user} onLogout={() => { removeToken(); setUser(null); setView("landing"); }} />

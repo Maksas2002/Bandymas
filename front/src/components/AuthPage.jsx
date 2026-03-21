@@ -10,31 +10,28 @@ export default function AuthPage({ onAuthSuccess, onBack, initialMode }) {
 
   useEffect(() => { setIsLogin(initialMode === "login"); }, [initialMode]);
 
-  const handleSubmit = async () => {
-  const endpoint = isLogin ? "/auth/login" : "/auth/register";
-  const body = isLogin ? { email, password } : { username, email, password };
-  
+  const handleSubmit = async (e) => {
+  e.preventDefault();
   try {
-    const response = await fetch(`${API_URL}${endpoint}`, {
+    const endpoint = isLogin ? "/auth/login" : "/auth/register";
+    const res = await fetch(`${API_URL}${endpoint}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      body: JSON.stringify(formData)
     });
-    const data = await response.json();
 
-    if (response.ok) { 
-      if (isLogin) {
-        // Išsaugojam tokeną ir vartotojo duomenis
-        setToken(data.token); 
-        onAuthSuccess(data.user); 
-      } else {
-        alert("Account created! Now Sign In.");
-        setIsLogin(true);
-      }
-    } else { 
-      alert(data.error); 
+    const data = await res.json();
+
+    if (res.ok) {
+      localStorage.setItem("token", data.token);
+      // PERDUODAME VISĄ OBJEKTĄ Į APP.JSX
+      onAuthSuccess(data.user); 
+    } else {
+      alert(data.message || "Klaida prisijungiant");
     }
-  } catch (err) { alert("Server error connection."); }
+  } catch (err) {
+    alert("Serverio klaida");
+  }
 };
 
   return (
