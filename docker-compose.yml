@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: budgetnest_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: budgetnest
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Štai tavo nurodytas kelias:
+      - ./back/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+  backend:
+    build: ./back
+    container_name: budgetnest_back
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    environment:
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=budgetnest
+      - DB_HOST=db
+      - DB_PORT=5432
+
+  frontend:
+    build: ./front
+    container_name: budgetnest_front
+    restart: always
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
