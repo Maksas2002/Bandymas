@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+  # DUOMENŲ BAZĖ
   db:
     image: postgres:15-alpine
     container_name: budgetnest_db_container
@@ -9,29 +10,31 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: budgetnest
     volumes:
-      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql # PATAISYTA: pridėtas db/ aplankas
+      # Naudojame pilną santykinį kelią
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     ports:
-      - "5433:5432"
+      - "5435:5432"
 
+  # BACKEND (Node.js)
   back:
     build: ./back
     container_name: budgetnest_back
     ports:
       - "3000:3000"
     environment:
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_USER: postgres
-      DB_PASSWORD: postgres
-      DB_NAME: budgetnest
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=budgetnest
     depends_on:
       - db
-    restart: always
 
+  # FRONTEND (React/Vite)
   front:
     build: ./front
     container_name: budgetnest_front
     ports:
-      - "8080:80"
+      - "8080:8080"
     depends_on:
       - back
