@@ -1,23 +1,14 @@
-import pkg from 'pg';
-const { Pool } = pkg;
+import postgres from 'postgres';
 import 'dotenv/config';
 
-const pool = new Pool({
-  user: process.env.DB_USER || 'postgres',
-  // SVARBU: Docker konteineryje host turi būti DB serviso pavadinimas (pvz. 'db')
-  host: process.env.DB_HOST || 'db', 
-  database: process.env.DB_NAME || 'budget_db',
-  password: process.env.DB_PASSWORD || 'password',
-  port: process.env.DB_PORT || 5432,
+const sql = postgres({
+    host: process.env.DB_HOST || 'db',
+    port: process.env.DB_PORT || 5432,
+    database: process.env.DB_NAME || 'budgetnest',
+    username: process.env.DB_USER || 'postgres',
+    password: process.env.DB_PASSWORD || 'postgres',
 });
 
-// Patikriname prisijungimą paleidžiant
-pool.query('SELECT NOW()', (err, res) => {
-  if (err) {
-    console.error('❌ DB PRISIJUNGIMO KLAIDA:', err.message);
-  } else {
-    console.log('✅ DB PRIJUNGTA SĖKMINGAI');
-  }
-});
+console.log('✅ SQL ryšys paruoštas (postgres.js)');
 
-export default pool;
+export default sql;

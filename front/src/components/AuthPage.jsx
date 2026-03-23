@@ -1,79 +1,66 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { API_URL } from "../constants";
-import { setToken } from "../utils/auth"; // Pridėk šį importą viršuje
 
-export default function AuthPage({ onAuthSuccess, onBack, initialMode }) {
-  const [isLogin, setIsLogin] = useState(initialMode === "login");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [username, setUsername] = useState("");
-
-  useEffect(() => { setIsLogin(initialMode === "login"); }, [initialMode]);
+export default function AuthPage({ onAuthSuccess, onBack }) {
+  const [isLogin, setIsLogin] = useState(true);
+  const [formData, setFormData] = useState({ username: "", password: "", email: "" });
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  try {
-    const endpoint = isLogin ? "/auth/login" : "/auth/register";
-    const res = await fetch(`${API_URL}${endpoint}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formData)
-    });
-
-    const data = await res.json();
-
-    if (res.ok) {
-      localStorage.setItem("token", data.token);
-      // PERDUODAME VISĄ OBJEKTĄ Į APP.JSX
-      onAuthSuccess(data.user); 
-    } else {
-      alert(data.message || "Klaida prisijungiant");
+    e.preventDefault();
+    try {
+      const endpoint = isLogin ? "/auth/login" : "/auth/register";
+      const res = await fetch(`${API_URL}${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData)
+      });
+      const data = await res.json();
+      if (res.ok) {
+        localStorage.setItem("token", data.token);
+        onAuthSuccess(data.user);
+      } else {
+        alert(data.error || "Klaida");
+      }
+    } catch (err) {
+      alert("Serverio klaida");
     }
-  } catch (err) {
-    alert("Serverio klaida");
-  }
-};
+  };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-[#03061C] p-6">
-      <div className="w-full max-w-[420px] space-y-8 bg-[#0D1126] p-12 rounded-3xl border border-white/5 shadow-2xl text-left text-white">
-        <h2 className="text-4xl font-bold tracking-tight text-center">{isLogin ? "Sign In" : "Sign Up"}</h2>
-        <div className="space-y-5">
+    <div className="min-h-screen flex items-center justify-center bg-[#03061C] p-6">
+      <div className="bg-[#0D1126] p-8 rounded-3xl border border-white/5 w-full max-w-md shadow-2xl text-center">
+        <h2 className="text-3xl font-black mb-6 italic">{isLogin ? "SIGN IN" : "SIGN UP"}</h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input 
+            className="w-full bg-[#161B33] p-4 rounded-xl border border-white/10 outline-none focus:border-blue-500"
+            placeholder="Username" 
+            value={formData.username} 
+            onChange={e => setFormData({...formData, username: e.target.value})} 
+            required 
+          />
           {!isLogin && (
             <input 
-              value={username} 
-              onChange={e => setUsername(e.target.value)} 
-              placeholder="Full Name" 
-              className="w-full bg-[#161B33] p-4 rounded-xl outline-none border border-white/10 focus:border-blue-500/50 transition text-white" 
+              className="w-full bg-[#161B33] p-4 rounded-xl border border-white/10 outline-none"
+              placeholder="Email" 
+              type="email" 
+              value={formData.email} 
+              onChange={e => setFormData({...formData, email: e.target.value})} 
+              required 
             />
           )}
           <input 
-            value={email} 
-            onChange={e => setEmail(e.target.value)} 
-            placeholder="Email Address" 
-            className="w-full bg-[#161B33] p-4 rounded-xl outline-none border border-white/10 focus:border-blue-500/50 transition text-white" 
-          />
-          <input 
-            type="password" 
-            value={password} 
-            onChange={e => setPassword(e.target.value)} 
+            className="w-full bg-[#161B33] p-4 rounded-xl border border-white/10 outline-none focus:border-blue-500"
             placeholder="Password" 
-            className="w-full bg-[#161B33] p-4 rounded-xl outline-none border border-white/10 focus:border-blue-500/50 transition text-white" 
+            type="password" 
+            value={formData.password} 
+            onChange={e => setFormData({...formData, password: e.target.value})} 
+            required 
           />
-          <button 
-            onClick={handleSubmit} 
-            className="w-full bg-[#4169E1] py-4 rounded-xl font-bold hover:bg-blue-600 transition shadow-lg shadow-blue-500/20 text-white"
-          >
-            {isLogin ? "Sign In" : "Create Account"}
-          </button>
-          <div className="text-center space-y-3">
-            <button onClick={() => setIsLogin(!isLogin)} className="text-blue-400 text-sm hover:underline">
-              {isLogin ? "Don't have an account? Sign Up" : "Already have an account? Sign In"}
-            </button>
-            <br />
-            <button onClick={onBack} className="text-white/20 text-xs hover:text-white transition">Back to Home</button>
-          </div>
-        </div>
+          <button className="w-full bg-blue-600 py-4 rounded-xl font-bold shadow-lg shadow-blue-500/20">{isLogin ? "Login" : "Register"}</button>
+        </form>
+        <button onClick={() => setIsLogin(!isLogin)} className="mt-6 text-xs text-white/30 uppercase tracking-widest hover:text-white transition">
+          {isLogin ? "Need an account? Sign Up" : "Already have an account? Sign In"}
+        </button>
       </div>
     </div>
   );
